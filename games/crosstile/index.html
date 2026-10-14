@@ -1,0 +1,771 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Crosstile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Chivo+Mono:wght@500;700&family=Chivo:wght@400;600;700&display=swap">
+<style>
+  :root{
+    --ground:#e8ecea;
+    --surface:#fbfcfb;
+    --well:#dde3e1;
+    --well-2:#d3dbd8;
+    --block:#b3c0bc;
+    --ink:#16232b;
+    --ink-soft:#5c6f76;
+    --rule:#c2ceca;
+    --accent:#0d7d78;
+    --accent-soft:#cfe4e1;
+    --accent-ink:#0a5d59;
+    --gold:#c98a1f;
+    --gold-soft:#f2e2c2;
+    --solved:#2c7a4b;
+    --solved-soft:#cfe5d6;
+    --keycap:#fdfefd;
+    --keycap-edge:#b9c6c2;
+    --shadow:rgba(22,35,43,.13);
+    --onaccent:#fbfcfb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#101a1e; --surface:#182529; --well:#0b1316; --well-2:#0f1a1e;
+      --block:#26383e; --ink:#e4eeea; --ink-soft:#8ca39f; --rule:#2c3d43;
+      --accent:#3fbdb3; --accent-soft:#12403f; --accent-ink:#7fd9d0;
+      --gold:#e0a83e; --gold-soft:#3d2f12; --solved:#59b781; --solved-soft:#12321f;
+      --keycap:#223136; --keycap-edge:#0a1114; --shadow:rgba(0,0,0,.45);
+      --onaccent:#08191b;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#101a1e; --surface:#182529; --well:#0b1316; --well-2:#0f1a1e;
+    --block:#26383e; --ink:#e4eeea; --ink-soft:#8ca39f; --rule:#2c3d43;
+    --accent:#3fbdb3; --accent-soft:#12403f; --accent-ink:#7fd9d0;
+    --gold:#e0a83e; --gold-soft:#3d2f12; --solved:#59b781; --solved-soft:#12321f;
+    --keycap:#223136; --keycap-edge:#0a1114; --shadow:rgba(0,0,0,.45);
+    --onaccent:#08191b;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:"Chivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{
+    max-width:560px;margin:0 auto;
+    padding-inline:16px;padding-block:20px 40px;
+    display:flex;flex-direction:column;gap:18px;
+  }
+
+  header{display:flex;flex-direction:column;gap:14px}
+  .brandrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .brand{
+    font-family:"Bricolage Grotesque","Chivo",sans-serif;font-weight:800;
+    font-size:clamp(26px,7vw,34px);letter-spacing:-.025em;line-height:1;margin:0;
+  }
+  .brand span{color:var(--accent)}
+  .tagline{font-size:12px;color:var(--ink-soft);letter-spacing:.055em;text-transform:uppercase;font-weight:600}
+  .levels{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{
+    font:inherit;font-size:12.5px;font-weight:700;letter-spacing:.02em;
+    padding:7px 12px;border-radius:999px;border:1px solid var(--rule);
+    background:transparent;color:var(--ink-soft);cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--onaccent)}
+
+  .status{display:flex;align-items:center;gap:12px}
+  .meter{flex:1;height:6px;border-radius:999px;background:var(--well-2);overflow:hidden}
+  .meter i{display:block;height:100%;width:0%;background:var(--solved);border-radius:999px;
+    transition:width .35s cubic-bezier(.4,1.2,.5,1)}
+  .count{
+    font-family:"Chivo Mono",ui-monospace,monospace;font-size:12px;font-weight:700;
+    color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+
+  /* ---------- board ---------- */
+  .board{
+    display:grid;width:100%;
+    max-width:var(--boardmax,100%);margin-inline:auto;
+    gap:var(--gap,5px);
+    grid-template-columns:var(--cluew) repeat(var(--n),minmax(0,1fr));
+  }
+  .corner{display:flex;align-items:flex-end;justify-content:flex-end;
+    padding:0 6px 6px 0;color:var(--ink-soft);opacity:.7}
+  .pad{min-height:0}
+
+  /* outer gutter clue */
+  .clue{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:4px 3px;border-radius:8px;background:transparent;border:0;
+    font:inherit;color:var(--ink-soft);cursor:pointer;text-align:center;min-width:0;
+    transition:background .15s,color .15s;
+  }
+  .clue:hover,.clue.active{background:var(--accent-soft);color:var(--accent-ink)}
+  .clue.done{color:var(--solved)}
+  .clue.done:hover,.clue.done.active{background:var(--solved-soft);color:var(--solved)}
+  .clue svg.art{display:block;width:clamp(24px,7.5vw,36px);height:auto}
+  .clue .mask{
+    font-family:"Chivo Mono",ui-monospace,monospace;font-weight:700;
+    font-size:var(--gfs,clamp(9px,2.7vw,13px));letter-spacing:.02em;
+    max-width:100%;overflow-wrap:anywhere;line-height:1.15;
+  }
+  .clue .dir{width:13px;height:13px;opacity:.6}
+
+  /* grid squares */
+  .cell{
+    position:relative;aspect-ratio:1/1;border:0;border-radius:7px;
+    background:var(--well);
+    box-shadow:inset 0 1px 2px var(--shadow), inset 0 0 0 1px var(--rule);
+    font-family:"Chivo Mono",ui-monospace,monospace;font-weight:700;
+    font-size:var(--fs);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
+    transition:background .15s,box-shadow .15s,color .15s;
+  }
+  .cell.inword{background:var(--well-2)}
+  .cell.sel{box-shadow:inset 0 0 0 2.5px var(--accent);background:var(--accent-soft)}
+  .cell.lock{background:var(--solved-soft);box-shadow:inset 0 0 0 1px var(--solved);
+    color:var(--solved);cursor:default}
+  .cell.over{box-shadow:inset 0 0 0 2.5px var(--gold)}
+  .cell:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+  /* solid blocker, no clue */
+  .solid{aspect-ratio:1/1;border-radius:7px;background:var(--block);opacity:.55}
+
+  /* interior clue square */
+  .cluecell{
+    aspect-ratio:1/1;border-radius:7px;background:var(--block);
+    display:flex;flex-direction:column;overflow:hidden;
+    box-shadow:inset 0 0 0 1px var(--rule);
+  }
+  .mini{
+    flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;
+    border:0;background:transparent;cursor:pointer;padding:0 12px 0 3px;
+    font:inherit;color:var(--ink);
+    transition:background .15s,color .15s;
+  }
+  .mini + .mini{border-top:1px solid var(--rule)}
+  .mini:hover,.mini.active{background:var(--accent);color:var(--onaccent)}
+  .mini.done{background:var(--solved);color:var(--onaccent)}
+  .mini .mask{
+    font-family:"Chivo Mono",ui-monospace,monospace;font-weight:700;
+    font-size:var(--mfs);letter-spacing:.01em;line-height:1;
+  }
+  .mini .dir{position:absolute;width:9px;height:9px;opacity:.85}
+  .mini.across .dir{right:2px;top:50%;transform:translateY(-50%)}
+  .mini.down .dir{right:2px;bottom:2px}
+  .mini:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+
+  .pop{animation:pop .22s cubic-bezier(.3,1.5,.5,1)}
+  @keyframes pop{from{transform:scale(.55);opacity:.3}to{transform:scale(1);opacity:1}}
+  .flash{animation:flash .5s ease-out}
+  @keyframes flash{0%{transform:translateY(0)}35%{transform:translateY(-5px)}100%{transform:translateY(0)}}
+
+  /* ---------- hand ---------- */
+  .rail{
+    background:var(--well);border-radius:14px;padding:13px 11px;
+    box-shadow:inset 0 2px 5px var(--shadow), inset 0 0 0 1px var(--rule);
+  }
+  .raillabel{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:10px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;
+    color:var(--ink-soft);margin-bottom:10px;padding-inline:2px;
+  }
+  .tray{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;min-height:52px}
+  .key{
+    width:52px;height:52px;border:0;border-radius:9px;
+    background:var(--keycap);color:var(--ink);
+    box-shadow:0 2px 0 var(--keycap-edge), 0 3px 6px var(--shadow);
+    font-family:"Chivo Mono",ui-monospace,monospace;font-weight:700;font-size:24px;
+    cursor:grab;display:flex;align-items:center;justify-content:center;
+    transition:transform .12s,box-shadow .12s;touch-action:manipulation;
+  }
+  .key:hover{transform:translateY(-2px);box-shadow:0 4px 0 var(--keycap-edge), 0 6px 10px var(--shadow)}
+  .key:active{transform:translateY(1px);box-shadow:0 1px 0 var(--keycap-edge)}
+  .key:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .key.fresh{animation:deal .3s cubic-bezier(.3,1.3,.5,1)}
+  @keyframes deal{from{transform:translateY(14px) scale(.7);opacity:0}to{transform:none;opacity:1}}
+  .trayempty{font-size:12.5px;color:var(--ink-soft);text-align:center;padding:16px 0}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{
+    font:inherit;font-size:13px;font-weight:700;padding:10px 14px;border-radius:9px;
+    border:1px solid var(--rule);background:var(--surface);color:var(--ink);cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;
+    transition:border-color .15s,color .15s,background .15s;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .btn.hint{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+  .btn.hint:hover{background:var(--gold);color:var(--onaccent)}
+  .btn[disabled]{opacity:.4;cursor:not-allowed;border-color:var(--rule);color:var(--ink-soft);background:transparent}
+  .btn .n{font-family:"Chivo Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+  .win{
+    border:0;border-left:4px solid var(--solved);background:var(--solved-soft);
+    border-radius:4px 11px 11px 4px;padding:15px 17px;
+    display:flex;flex-direction:column;gap:9px;
+  }
+  .win h2{font-family:"Bricolage Grotesque","Chivo",sans-serif;font-weight:800;
+    font-size:19px;margin:0;color:var(--solved);letter-spacing:-.015em}
+  .win p{margin:0;font-size:13.5px;line-height:1.55;color:var(--ink)}
+  .win .words{font-family:"Chivo Mono",ui-monospace,monospace;font-size:12px;
+    font-weight:700;color:var(--solved);letter-spacing:.05em;line-height:1.7}
+
+  .how{border-top:1px solid var(--rule);padding-top:15px;display:flex;flex-direction:column;gap:8px}
+  .how h3{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
+    color:var(--ink-soft);margin:0}
+  .how ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+  .how li{font-size:13px;line-height:1.55;color:var(--ink-soft)}
+  .how b{color:var(--ink);font-weight:700}
+  kbd{font-family:"Chivo Mono",ui-monospace,monospace;font-size:11px;font-weight:700;
+    border:1px solid var(--rule);border-bottom-width:2px;border-radius:4px;
+    padding:1px 5px;background:var(--surface);color:var(--ink)}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brandrow">
+      <h1 class="brand">Cross<span>tile</span></h1>
+      <div class="tagline">Follow the arrows</div>
+    </div>
+    <div class="levels" id="levels" role="group" aria-label="Choose a puzzle"></div>
+  </header>
+
+  <div class="status">
+    <div class="meter"><i id="meterfill"></i></div>
+    <div class="count" id="count">0 / 6 words</div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="rail">
+    <div class="raillabel">
+      <span>Your letters</span>
+      <span class="count" id="pilecount">0 in pile</span>
+    </div>
+    <div class="tray" id="tray"></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn hint" id="hintbtn" type="button">Reveal a letter <span class="n" id="hintn">3</span></button>
+    <button class="btn" id="resetbtn" type="button">Start over</button>
+  </div>
+
+  <div class="win" id="win" hidden>
+    <h2 id="wintitle">Solved</h2>
+    <p id="wintext"></p>
+    <p class="words" id="winwords"></p>
+  </div>
+
+  <div class="how">
+    <h3>How to play</h3>
+    <ol>
+      <li>Every <b>arrow</b> points from a clue into the word it belongs to — right for across, down for down.</li>
+      <li>Clues sit in the <b>left and top margins</b>, and on the bigger boards <b>inside the grid</b> too.</li>
+      <li>A clue is a picture, or the word with letters missing. Words cross and share letters.</li>
+      <li>You hold <b>5 letters</b> at a time. Place one and the next is dealt from the pile.</li>
+      <li>Tap a square, then tap a letter — or drag a tile onto the grid. Tap a placed letter to take it back.</li>
+      <li>On a keyboard: type letters, <kbd>⌫</kbd> to undo, arrows to move, <kbd>Tab</kbd> to switch word.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+/* ============================ art ============================ */
+const ICONS = {
+  eye:'<path d="M3 24c6-9.5 12.6-14 21-14s15 4.5 21 14c-6 9.5-12.6 14-21 14S9 33.5 3 24z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><circle cx="24" cy="24" r="6.4" fill="currentColor"/>',
+  eyes:'<g transform="translate(-1,10) scale(0.5)"><path d="M3 24c6-9.5 12.6-14 21-14s15 4.5 21 14c-6 9.5-12.6 14-21 14S9 33.5 3 24z" fill="none" stroke="currentColor" stroke-width="4.4" stroke-linejoin="round"/><circle cx="24" cy="24" r="7" fill="currentColor"/></g><g transform="translate(25,10) scale(0.5)"><path d="M3 24c6-9.5 12.6-14 21-14s15 4.5 21 14c-6 9.5-12.6 14-21 14S9 33.5 3 24z" fill="none" stroke="currentColor" stroke-width="4.4" stroke-linejoin="round"/><circle cx="24" cy="24" r="7" fill="currentColor"/></g>',
+  net:'<circle cx="28" cy="17" r="12.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M19.2 26 L7 39.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/><g fill="none" stroke="currentColor" stroke-width="1.15" opacity=".8"><path d="M19 8.5 L37 26.5M25 5.6 L39.8 20.4M16.6 14.5 L31.5 29.4M16 21 L24 29"/><path d="M37 8.5 L19 26.5M40 15 L29.5 25.5M31 5.6 L17.2 19.4"/></g>',
+  pen:'<path d="M11 37.5 L15.5 25.5 L33.5 7.5 a4.6 4.6 0 0 1 6.5 6.5 L22 32 z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><path d="M15.5 25.5 L22 32" fill="none" stroke="currentColor" stroke-width="2.1"/><path d="M30.5 10.5 L37 17" fill="none" stroke="currentColor" stroke-width="2.1"/><path d="M11 37.5 L8.5 40 L13 38.5 z" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+  corn:'<ellipse cx="24" cy="21" rx="8.5" ry="15" fill="none" stroke="currentColor" stroke-width="2.6"/><g fill="currentColor"><circle cx="21" cy="12" r="1.5"/><circle cx="27" cy="12" r="1.5"/><circle cx="24" cy="16" r="1.5"/><circle cx="19.5" cy="19" r="1.5"/><circle cx="28.5" cy="19" r="1.5"/><circle cx="24" cy="23" r="1.5"/><circle cx="20" cy="27" r="1.5"/><circle cx="28" cy="27" r="1.5"/><circle cx="24" cy="31" r="1.5"/></g><path d="M23 36.5 C16 41 11 38 8.5 31 C15.5 30.5 20.5 32.5 23 36.5z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M25 36.5 C32 41 37 38 39.5 31 C32.5 30.5 27.5 32.5 25 36.5z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>',
+  nest:'<path d="M5 25 q19 13.5 38 0 q-1.5 15 -19 15 q-17.5 0 -19 -15z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><g fill="none" stroke="currentColor" stroke-width="1.15" opacity=".75"><path d="M7 29 q17 8 34 0M9 34 q15 7 30 0M11.5 38.5 q12.5 5 25 0"/></g><ellipse cx="17" cy="21.5" rx="5" ry="6" fill="none" stroke="currentColor" stroke-width="2.2"/><ellipse cx="29.5" cy="20" rx="5" ry="6" fill="none" stroke="currentColor" stroke-width="2.2"/>',
+  cone:'<path d="M15 24 L24 43 L33 24 z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><g fill="none" stroke="currentColor" stroke-width="1.15" opacity=".75"><path d="M18.5 31.5 L27.5 27M21 37 L30 25.5M17 27 L22.5 38"/></g><path d="M13.5 24 a10.5 9 0 0 1 21 0z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><circle cx="24" cy="8.5" r="3" fill="currentColor"/>',
+  rose:'<circle cx="23" cy="15" r="10.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M23 21.5 a5.2 5.2 0 1 0 -4.4-8.2 a7.8 7.8 0 1 1 2 12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M23 25.5 L23 42" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M23 33 q9.5-3.5 11.5-11 q-9.5 .5-11.5 11z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/><path d="M23 38.5 q-8.5-2-10.5-8.5 q8.5 0 10.5 8.5z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/>',
+  apple:'<path d="M24 15.5 c-6.5-5.5-16.5-2.5-16.5 9.5 c0 10.5 7 17.5 11.5 17.5 c2 0 3.2-1.2 5-1.2 s3 1.2 5 1.2 c4.5 0 11.5-7 11.5-17.5 c0-12-10-15-16.5-9.5z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><path d="M24 15 L24 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M24.5 10.5 q7-5.5 11.5-2.5 q-3.5 6.5-11.5 2.5z" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+  laser:'<rect x="4" y="18" width="18" height="12" rx="3.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M8.5 24 h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M22 24 H41" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/><g fill="none" stroke="currentColor" stroke-width="1.6" opacity=".6" stroke-linecap="round"><path d="M27 18.5 V29.5M33 20 V28"/></g><circle cx="42.5" cy="24" r="3.4" fill="currentColor"/>',
+  owl:'<path d="M10 22 a14 13 0 0 1 28 0 v9 a14 15 0 0 1 -28 0z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><path d="M11.5 16.5 L8 7 L17.5 11.5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round"/><path d="M36.5 16.5 L40 7 L30.5 11.5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round"/><circle cx="18" cy="22" r="5.4" fill="none" stroke="currentColor" stroke-width="2.1"/><circle cx="30" cy="22" r="5.4" fill="none" stroke="currentColor" stroke-width="2.1"/><circle cx="18" cy="22" r="2.2" fill="currentColor"/><circle cx="30" cy="22" r="2.2" fill="currentColor"/><path d="M24 27.5 L21.5 31 L24 33.5 L26.5 31 z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M15 38 q9 5 18 0" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+  dog:'<path d="M15 19 q0-8 9-8 t9 8 v7 q0 11-9 13 t-9-13z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><path d="M15.5 16 q-8 1-8.5 11 q-.3 7 5.5 9 q3-2 2.5-8" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round"/><path d="M32.5 16 q8 1 8.5 11 q.3 7-5.5 9 q-3-2-2.5-8" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round"/><circle cx="20" cy="22" r="2.1" fill="currentColor"/><circle cx="28" cy="22" r="2.1" fill="currentColor"/><path d="M24 28 a2.8 2.4 0 1 0 .1 0z" fill="currentColor"/><path d="M24 30.5 V34 M24 34 q-3 2.5-5 .5 M24 34 q3 2.5 5 .5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  key:'<circle cx="14" cy="24" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="14" cy="24" r="3.4" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M23 24 H42" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><path d="M33 24 V32 M38.5 24 V29.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
+};
+const ARROW_R = '<svg class="dir" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 6h9M7 2.5 10.5 6 7 9.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ARROW_D = '<svg class="dir" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1v9M2.5 7 6 10.5 9.5 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+/* ============================ levels ============================ */
+const pic = (icon,label)=>({type:'pic',icon,label});
+const msk = (mask)=>({type:'mask',mask});
+
+/* a word square: every row and every column is an entry, all clued from the margin */
+function square(id,name,size,fs,boardmax,rows,cols){
+  const entries = [];
+  rows.forEach((o,r)=> entries.push({d:'A',r,c:0,w:o.w,pk:'gutter',pr:r,pc:-1,clue:o.clue}));
+  cols.forEach((o,c)=> entries.push({d:'D',r:0,c,w:o.w,pk:'gutter',pr:-1,pc:c,clue:o.clue}));
+  return {id,name,size,fs,boardmax,gap:'5px',mfs:'12px',blocks:null,entries};
+}
+
+const LEVELS = [
+  square(0,'3 × 3',3,'clamp(21px,7.2vw,31px)','340px',
+    [{w:'PRY',clue:msk('P_Y')},{w:'EYE',clue:pic('eye','eye')},{w:'NET',clue:pic('net','net')}],
+    [{w:'PEN',clue:pic('pen','pen')},{w:'RYE',clue:msk('R_E')},{w:'YET',clue:msk('_ET')}]),
+
+  square(1,'4 × 4',4,'clamp(19px,6.2vw,28px)','440px',
+    [{w:'CORN',clue:pic('corn','corn')},{w:'OBOE',clue:msk('O_OE')},
+     {w:'NEST',clue:pic('nest','nest')},{w:'EYES',clue:pic('eyes','eyes')}],
+    [{w:'CONE',clue:pic('cone','cone')},{w:'OBEY',clue:msk('O_E_')},
+     {w:'ROSE',clue:pic('rose','rose')},{w:'NETS',clue:msk('NE_S')}]),
+
+  square(2,'5 × 5',5,'clamp(16px,5.1vw,25px)','100%',
+    [{w:'APPLE',clue:pic('apple','apple')},{w:'RELAX',clue:msk('RE_A_')},{w:'ERASE',clue:msk('E_AS_')},
+     {w:'NICER',clue:msk('NI_E_')},{w:'ALERT',clue:msk('A_ER_')}],
+    [{w:'ARENA',clue:msk('AR_N_')},{w:'PERIL',clue:msk('P_RI_')},{w:'PLACE',clue:msk('PL_C_')},
+     {w:'LASER',clue:pic('laser','laser')},{w:'EXERT',clue:msk('E_ER_')}]),
+
+  /* arrowword: clue squares live inside the grid, each arrow pointing into its word.
+     Every row but one has a left-margin clue; every column but two has a top-margin clue. */
+  {
+    id:3, name:'7 × 7', size:7, fs:'clamp(13px,3.9vw,20px)', boardmax:'100%', gap:'4px', mfs:'clamp(7.5px,2vw,10px)',
+    blocks:[[false,false,false,false,false,false,false],[false,false,false,true,false,true,false],[false,false,false,true,false,false,false],[false,false,false,true,false,false,false],[false,false,false,false,false,false,false],[false,false,false,false,false,false,false],[false,true,false,false,false,false,false]],
+    entries:[
+      {d:'A',r:0,c:0,w:'STRIPED',pk:'gutter',pr:0,pc:-1,clue:msk('S___PED')},
+      {d:'A',r:1,c:0,w:'THE',pk:'gutter',pr:1,pc:-1,clue:msk('_HE')},
+      {d:'A',r:2,c:0,w:'ARC',pk:'gutter',pr:2,pc:-1,clue:msk('A_C')},
+      {d:'A',r:2,c:4,w:'ERA',pk:'cell',pr:2,pc:3,clue:msk('ER_')},
+      {d:'A',r:3,c:0,w:'TOE',pk:'gutter',pr:3,pc:-1,clue:msk('TO_')},
+      {d:'A',r:3,c:4,w:'LAG',pk:'cell',pr:3,pc:3,clue:msk('L_G')},
+      {d:'A',r:4,c:0,w:'UNITING',pk:'gutter',pr:4,pc:-1,clue:msk('UN___NG')},
+      {d:'A',r:5,c:0,w:'REVENGE',pk:'gutter',pr:5,pc:-1,clue:msk('REVE___')},
+      {d:'A',r:6,c:2,w:'EDGED',pk:'cell',pr:6,pc:1,clue:msk('__GED')},
+      {d:'D',r:0,c:0,w:'STATURE',pk:'gutter',pr:-1,pc:0,clue:msk('_TA_U_E')},
+      {d:'D',r:0,c:1,w:'THRONE',pk:'gutter',pr:-1,pc:1,clue:msk('T_RON_')},
+      {d:'D',r:0,c:2,w:'RECEIVE',pk:'gutter',pr:-1,pc:2,clue:msk('R__EI_E')},
+      {d:'D',r:4,c:3,w:'TED',pk:'cell',pr:3,pc:3,clue:msk('T_D')},
+      {d:'D',r:0,c:4,w:'PEELING',pk:'gutter',pr:-1,pc:4,clue:msk('PEEL___')},
+      {d:'D',r:2,c:5,w:'RANGE',pk:'cell',pr:1,pc:5,clue:msk('_ANG_')},
+      {d:'D',r:0,c:6,w:'DRAGGED',pk:'gutter',pr:-1,pc:6,clue:msk('_RAG_E_')}
+    ]
+  }
+];
+
+const HAND_SIZE = 5;
+
+/* ============================ state ============================ */
+const el = id => document.getElementById(id);
+let L, N, E, sol, isBlock, grid, pile, hand, active, pos, hints, won, fresh;
+
+function rng(seed){ let s = seed*9301+49297; return ()=> (s = (s*9301+49297)%233280)/233280; }
+
+function cellsOf(e){
+  return Array.from({length:e.w.length},(_,k)=> e.d==='A' ? {r:e.r,c:e.c+k} : {r:e.r+k,c:e.c});
+}
+
+function load(levelIndex, quiet){
+  L = LEVELS[levelIndex];
+  N = L.size;
+  E = L.entries.map(e=>({...e, cells:cellsOf(e)}));
+
+  isBlock = L.blocks ? L.blocks.map(row=>row.slice()) : Array.from({length:N},()=>Array(N).fill(false));
+  sol = Array.from({length:N},()=>Array(N).fill(null));
+  E.forEach(e=> e.cells.forEach((p,k)=>{ sol[p.r][p.c] = e.w[k]; }));
+
+  grid = Array.from({length:N},()=>Array(N).fill(null));
+
+  // the pile holds exactly the letters the grid needs, shuffled
+  const letters = [];
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(sol[r][c]) letters.push(sol[r][c]);
+  const rnd = rng(levelIndex+11);
+  for(let i=letters.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [letters[i],letters[j]]=[letters[j],letters[i]]; }
+  pile = letters.map((ch,i)=>({id:i, ch}));
+  hand = [];
+  fresh = new Set();
+  draw();
+
+  active = 0; pos = 0;
+  hints = 3; won = false;
+  if(!quiet) window.scrollTo({top:0,behavior:'instant'});
+  buildLevels(levelIndex);
+  buildBoard();
+  render();
+}
+
+function draw(){
+  fresh = new Set();
+  while(hand.length < HAND_SIZE && pile.length){
+    const t = pile.shift();
+    hand.push(t);
+    fresh.add(t.id);
+  }
+}
+
+const letterAt = (r,c) => grid[r][c] ? grid[r][c].ch : null;
+const entryDone = e => e.cells.every((p,k)=> letterAt(p.r,p.c) === e.w[k]);
+const entriesAt = (r,c) => E.filter(e=> e.cells.some(p=>p.r===r && p.c===c));
+const locked = (r,c) => entriesAt(r,c).some(entryDone);
+const selCell = () => E[active].cells[Math.min(pos, E[active].cells.length-1)];
+
+/* ============================ build ============================ */
+function buildLevels(activeIdx){
+  const box = el('levels');
+  box.innerHTML = '';
+  LEVELS.forEach((lv,i)=>{
+    const b = document.createElement('button');
+    b.type='button'; b.className='chip'; b.textContent = lv.name;
+    b.setAttribute('aria-pressed', String(i===activeIdx));
+    b.onclick = ()=> load(i);
+    box.appendChild(b);
+  });
+}
+
+const clueArt = clue => clue.type==='pic'
+  ? `<svg class="art" viewBox="0 0 48 48" aria-hidden="true">${ICONS[clue.icon]}</svg>`
+  // on the wide boards the margin is narrow, so a spaced-out mask would wrap to two lines
+  : `<span class="mask">${clue.mask.split('').join(N>=7 ? '' : ' ')}</span>`;
+
+const clueSpoken = clue => clue.type==='pic'
+  ? `picture of a ${clue.label}`
+  : clue.mask.split('').map(ch=> ch==='_' ? 'blank' : ch).join(', ');
+
+function selectEntry(i){
+  active = i;
+  const cells = E[i].cells;
+  const k = cells.findIndex(p=> !letterAt(p.r,p.c));
+  pos = k === -1 ? 0 : k;
+}
+
+function buildBoard(){
+  const b = el('board');
+  b.style.setProperty('--n', N);
+  b.style.setProperty('--fs', L.fs);
+  b.style.setProperty('--gap', L.gap);
+  b.style.setProperty('--mfs', L.mfs);
+  b.style.setProperty('--boardmax', L.boardmax);
+  // a 7-letter mask has to fit inside one narrow margin cell
+  b.style.setProperty('--gfs', N >= 7 ? 'clamp(7.5px,2.05vw,10px)' : 'clamp(9px,2.7vw,13px)');
+  b.style.setProperty('--cluew', N>=7 ? 'clamp(46px,13.5vw,66px)' : 'clamp(54px,16.5vw,80px)');
+  b.innerHTML = '';
+
+  const gutterRow = {}, gutterCol = {}, inCell = {};
+  E.forEach((e,i)=>{
+    if(e.pk==='gutter'){ (e.d==='A' ? gutterRow : gutterCol)[e.d==='A' ? e.pr : e.pc] = i; }
+    else { (inCell[e.pr+','+e.pc] = inCell[e.pr+','+e.pc] || []).push(i); }
+  });
+
+  const corner = document.createElement('div');
+  corner.className = 'corner';
+  corner.innerHTML = `<svg width="17" height="17" viewBox="0 0 17 17" aria-hidden="true"><path d="M2 4.5h9M8.5 1.5L11.5 4.5 8.5 7.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 8v7M1.5 12l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  b.appendChild(corner);
+
+  for(let c=0;c<N;c++){
+    const i = gutterCol[c];
+    if(i===undefined){ const p=document.createElement('div'); p.className='pad'; b.appendChild(p); continue; }
+    const d = document.createElement('button');
+    d.type='button'; d.className='clue'; d.dataset.entry = i;
+    d.innerHTML = clueArt(E[i].clue) + ARROW_D;
+    d.setAttribute('aria-label', `Down clue, column ${c+1}: ${clueSpoken(E[i].clue)}`);
+    d.onclick = ()=>{ selectEntry(i); render(); };
+    b.appendChild(d);
+  }
+
+  for(let r=0;r<N;r++){
+    const i = gutterRow[r];
+    if(i===undefined){ const p=document.createElement('div'); p.className='pad'; b.appendChild(p); }
+    else{
+      const d = document.createElement('button');
+      d.type='button'; d.className='clue'; d.dataset.entry = i;
+      d.innerHTML = clueArt(E[i].clue) + ARROW_R;
+      d.setAttribute('aria-label', `Across clue, row ${r+1}: ${clueSpoken(E[i].clue)}`);
+      d.onclick = ()=>{ selectEntry(i); render(); };
+      b.appendChild(d);
+    }
+
+    for(let c=0;c<N;c++){
+      if(isBlock[r][c]){
+        const owners = inCell[r+','+c];
+        if(!owners){ const s=document.createElement('div'); s.className='solid'; b.appendChild(s); continue; }
+        const box = document.createElement('div');
+        box.className = 'cluecell';
+        owners.sort((x,y)=> (E[x].d==='A'?0:1) - (E[y].d==='A'?0:1));
+        owners.forEach(i=>{
+          const e = E[i];
+          const m = document.createElement('button');
+          m.type='button';
+          m.className = 'mini ' + (e.d==='A'?'across':'down');
+          m.dataset.entry = i;
+          m.innerHTML = `<span class="mask">${e.clue.mask}</span>` + (e.d==='A'?ARROW_R:ARROW_D);
+          m.setAttribute('aria-label', `${e.d==='A'?'Across':'Down'} clue: ${clueSpoken(e.clue)}`);
+          m.onclick = ()=>{ selectEntry(i); render(); };
+          box.appendChild(m);
+        });
+        b.appendChild(box);
+        continue;
+      }
+      const cell = document.createElement('button');
+      cell.type='button'; cell.className='cell'; cell.dataset.r=r; cell.dataset.c=c;
+      cell.onclick = ()=> tapCell(r,c);
+      cell.addEventListener('dragover', e=>{ if(locked(r,c)) return; e.preventDefault(); cell.classList.add('over'); });
+      cell.addEventListener('dragleave', ()=> cell.classList.remove('over'));
+      cell.addEventListener('drop', e=>{
+        e.preventDefault(); cell.classList.remove('over');
+        const id = parseInt(e.dataTransfer.getData('text/plain'),10);
+        const t = hand.find(x=>x.id===id);
+        if(t) placeTile(t,r,c);
+      });
+      b.appendChild(cell);
+    }
+  }
+}
+
+/* ============================ actions ============================ */
+function tapCell(r,c){
+  if(locked(r,c)){ return; }
+  if(letterAt(r,c)){ removeAt(r,c); focusCell(r,c); render(); return; }
+  focusCell(r,c);
+  render();
+}
+
+function focusCell(r,c){
+  const owners = E.map((e,i)=>i).filter(i=> E[i].cells.some(p=>p.r===r&&p.c===c));
+  if(!owners.length) return;
+  let i = owners.includes(active) ? active : owners[0];
+  active = i;
+  pos = E[i].cells.findIndex(p=>p.r===r&&p.c===c);
+}
+
+function removeAt(r,c){
+  const t = grid[r][c];
+  if(!t) return;
+  grid[r][c] = null;
+  hand.push(t);          // comes back to your hand; no new tile is dealt until you are under five
+  fresh = new Set();
+}
+
+function placeTile(t,r,c){
+  if(won || locked(r,c) || isBlock[r][c]) return;
+  const i = hand.indexOf(t);
+  if(i === -1) return;
+  if(grid[r][c]) removeAt(r,c);
+  hand.splice(hand.indexOf(t),1);
+  grid[r][c] = t;
+  focusCell(r,c);
+  advance();
+  draw();
+  render({popped:{r,c}});
+}
+
+function placeLetter(ch){
+  const p = selCell();
+  if(locked(p.r,p.c)) return;
+  const t = hand.find(x=>x.ch===ch);
+  if(!t){ bump(); return; }
+  placeTile(t,p.r,p.c);
+}
+
+function bump(){
+  const p = selCell();
+  const cell = cellEl(p.r,p.c);
+  if(!cell) return;
+  cell.classList.remove('flash'); void cell.offsetWidth; cell.classList.add('flash');
+}
+
+function advance(){
+  const cells = E[active].cells;
+  for(let k=pos+1;k<cells.length;k++) if(!letterAt(cells[k].r,cells[k].c)){ pos=k; return; }
+  for(let k=0;k<cells.length;k++) if(!letterAt(cells[k].r,cells[k].c)){ pos=k; return; }
+  const next = E.findIndex(e=> !entryDone(e) && e.cells.some(p=>!letterAt(p.r,p.c)));
+  if(next !== -1) selectEntry(next);
+}
+
+function useHint(){
+  if(won || hints<=0) return;
+  const wrong = [];
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    if(isBlock[r][c] || locked(r,c)) continue;
+    if(letterAt(r,c) !== sol[r][c]) wrong.push({r,c});
+  }
+  if(!wrong.length) return;
+  const empty = wrong.filter(p=>!letterAt(p.r,p.c));
+  const from = empty.length ? empty : wrong;
+  const pick = from[Math.floor(Math.random()*from.length)];
+  const need = sol[pick.r][pick.c];
+
+  let t = hand.find(x=>x.ch===need);
+  if(t) hand.splice(hand.indexOf(t),1);
+  if(!t){
+    const k = pile.findIndex(x=>x.ch===need);
+    if(k !== -1) t = pile.splice(k,1)[0];
+  }
+  if(!t){
+    for(let r=0;r<N && !t;r++) for(let c=0;c<N && !t;c++){
+      if(isBlock[r][c] || locked(r,c)) continue;
+      if(grid[r][c] && grid[r][c].ch===need && sol[r][c]!==need){ t = grid[r][c]; grid[r][c]=null; }
+    }
+  }
+  if(!t) return;
+  hints--;
+  if(grid[pick.r][pick.c]) removeAt(pick.r,pick.c);
+  grid[pick.r][pick.c] = t;
+  focusCell(pick.r,pick.c);
+  draw();
+  render({popped:pick});
+}
+
+/* ============================ render ============================ */
+const cellEl = (r,c) => document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+
+function render(opts){
+  opts = opts || {};
+  const done = E.map(entryDone);
+  const act = E[active];
+  const sp = selCell();
+
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    if(isBlock[r][c]) continue;
+    const cell = cellEl(r,c);
+    if(!cell) continue;
+    const ch = letterAt(r,c);
+    const lock = locked(r,c);
+    const inWord = act.cells.some(p=>p.r===r&&p.c===c);
+    cell.className = 'cell'
+      + (ch ? ' filled' : '')
+      + (lock ? ' lock' : '')
+      + (!lock && inWord ? ' inword' : '')
+      + (!lock && r===sp.r && c===sp.c ? ' sel' : '');
+    const pop = opts.popped && opts.popped.r===r && opts.popped.c===c;
+    cell.innerHTML = ch ? `<span class="ch${pop?' pop':''}">${ch}</span>` : '';
+    cell.setAttribute('aria-label', `Row ${r+1} column ${c+1}${ch?`, letter ${ch}`:', empty'}`);
+  }
+
+  document.querySelectorAll('[data-entry]').forEach(n=>{
+    const i = +n.dataset.entry;
+    n.classList.toggle('done', done[i]);
+    n.classList.toggle('active', !done[i] && i===active);
+  });
+
+  const tray = el('tray');
+  tray.innerHTML = '';
+  if(!hand.length){
+    tray.innerHTML = `<div class="trayempty">${pile.length ? 'Dealing…' : 'Every letter is on the board.'}</div>`;
+  }else{
+    hand.forEach(t=>{
+      const k = document.createElement('button');
+      k.type='button'; k.className = 'key' + (fresh.has(t.id)?' fresh':'');
+      k.textContent = t.ch;
+      k.setAttribute('aria-label', `Letter ${t.ch}`);
+      k.draggable = true;
+      k.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', String(t.id)); e.dataTransfer.effectAllowed='move'; });
+      k.onclick = ()=>{ const p = selCell(); placeTile(t,p.r,p.c); };
+      tray.appendChild(k);
+    });
+  }
+  el('pilecount').textContent = `${pile.length} in pile`;
+
+  const nd = done.filter(Boolean).length;
+  el('count').textContent = `${nd} / ${E.length} words`;
+  el('meterfill').style.width = `${(nd/E.length)*100}%`;
+
+  el('hintn').textContent = hints;
+  el('hintbtn').disabled = hints<=0 || won;
+
+  const winbox = el('win');
+  if(nd === E.length){
+    if(!won){ won = true; celebrate(); }
+    winbox.hidden = false;
+    el('wintitle').textContent = `${L.name} solved`;
+    const next = LEVELS[L.id+1];
+    el('wintext').textContent = next
+      ? `All ${E.length} words in place, with ${hints} hint${hints===1?'':'s'} to spare. ${next.name} is waiting.`
+      : `All ${E.length} words in place, with ${hints} hint${hints===1?'':'s'} to spare. That is every puzzle here.`;
+    el('winwords').textContent = E.map(e=>e.w).join(' · ');
+  }else{
+    won = false;
+    winbox.hidden = true;
+  }
+}
+
+function celebrate(){
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const cell = cellEl(r,c);
+    if(!cell) continue;
+    setTimeout(()=>{ cell.classList.add('flash'); setTimeout(()=>cell.classList.remove('flash'),520); }, (r+c)*45);
+  }
+}
+
+/* ============================ input ============================ */
+el('hintbtn').onclick = useHint;
+el('resetbtn').onclick = ()=> load(L.id);
+
+document.addEventListener('keydown', e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+  const k = e.key;
+  if(/^[a-zA-Z]$/.test(k)){ e.preventDefault(); placeLetter(k.toUpperCase()); return; }
+
+  if(k==='Backspace'||k==='Delete'){
+    e.preventDefault();
+    const p = selCell();
+    if(letterAt(p.r,p.c) && !locked(p.r,p.c)){ removeAt(p.r,p.c); render(); return; }
+    if(pos>0){
+      pos--;
+      const q = selCell();
+      if(!locked(q.r,q.c)) removeAt(q.r,q.c);
+    }
+    render();
+    return;
+  }
+
+  if(k==='Tab'){
+    e.preventDefault();
+    const p = selCell();
+    const owners = E.map((x,i)=>i).filter(i=> E[i].cells.some(q=>q.r===p.r&&q.c===p.c));
+    if(owners.length>1){
+      const nxt = owners[(owners.indexOf(active)+1) % owners.length];
+      active = nxt;
+      pos = E[nxt].cells.findIndex(q=>q.r===p.r&&q.c===p.c);
+    }
+    render();
+    return;
+  }
+
+  const moves = {ArrowRight:[0,1],ArrowLeft:[0,-1],ArrowUp:[-1,0],ArrowDown:[1,0]};
+  if(moves[k]){
+    e.preventDefault();
+    const [dr,dc] = moves[k];
+    let {r,c} = selCell();
+    for(let step=0; step<N; step++){
+      r += dr; c += dc;
+      if(r<0||c<0||r>=N||c>=N) break;
+      if(!isBlock[r][c]){ focusCell(r,c); break; }
+    }
+    render();
+  }
+});
+
+/* ============================ boot ============================ */
+function start(state){
+  load((state && typeof state.level==='number') ? state.level : 0, true);
+  if(state && state.grid && state.grid.length===N){
+    state.grid.forEach((row,r)=>row.forEach((ch,c)=>{
+      if(!ch || isBlock[r][c]) return;
+      let t = hand.find(x=>x.ch===ch);
+      if(t) hand.splice(hand.indexOf(t),1);
+      if(!t){ const k = pile.findIndex(x=>x.ch===ch); if(k!==-1) t = pile.splice(k,1)[0]; }
+      if(t) grid[r][c] = t;
+    }));
+    if(typeof state.hints==='number') hints = state.hints;
+    draw();
+    render();
+  }
+}
+window.claude?.hot?.snapshot?.(()=>({
+  level: L.id,
+  hints,
+  grid: grid.map(row=>row.map(t=> t ? t.ch : null))
+}));
+if(window.claude?.hot?.ready) window.claude.hot.ready(start);
+else start(window.claude?.hot?.data ?? {});
+</script>
+
+</body></html>
