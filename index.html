@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Vijay Saliganti, senior developer building games and the AI systems that make them. Unity, AR/VR, GenAI.">
+<title>Vijay — AI + Games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: left-aligned engineering log. Hero = live PolySphere ray-scatter puzzle; work as case rows; mono labels as section markers. Deliberately dark-only. */
+:root{
+  --bg:#0C1015; --surface:#121821; --surface-2:#18202B; --line:#243040;
+  --fg:#E7EBF1; --muted:#8E9AAA; --accent:#F0A84A; --accent-soft:rgba(240,168,74,.12);
+  --cool:#86B6E6; --cool-soft:rgba(134,182,230,.12); --good:#7FCB98;
+  --f-display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0}
+img{max-width:100%}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));}
+.wrap{max-width:1080px;margin:0 auto}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+p{margin:0}
+.label{font-family:var(--f-mono);font-size:12.5px;letter-spacing:.06em;color:var(--muted);text-transform:lowercase}
+.label b{color:var(--accent);font-weight:500}
+.todo{font-family:var(--f-mono);font-size:.82em;color:var(--accent);background:var(--accent-soft);
+  border:1px dashed rgba(240,168,74,.55);border-radius:4px;padding:1px 6px;white-space:normal}
+
+/* nav */
+nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+  padding-block:22px;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.02em}
+.brand span{color:var(--accent)}
+nav ul{display:flex;gap:20px;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+nav a{color:var(--muted);font-family:var(--f-mono);font-size:13px}
+nav a:hover{color:var(--fg);text-decoration:none}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:48px;align-items:center;padding-block:64px 56px}
+.hero h1{font-size:clamp(38px,6vw,64px);font-weight:700;letter-spacing:-.01em}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .lede{margin-top:20px;max-width:58ch;color:#C5CDD8;font-size:18px}
+.hero .meta{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px}
+.chip{font-family:var(--f-mono);font-size:12.5px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--surface)}
+.chip.on{color:var(--good);border-color:rgba(127,203,152,.4)}
+.cta{margin-top:32px;display:flex;gap:12px;flex-wrap:wrap}
+.btn{font-family:var(--f-mono);font-size:14px;padding:11px 18px;border-radius:6px;border:1px solid var(--line);color:var(--fg);background:var(--surface);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1A1206;font-weight:500}
+.btn:hover{text-decoration:none;filter:brightness(1.08)}
+.stage{position:relative;width:100%;max-width:420px;justify-self:end}
+.stage canvas{display:block;width:100%;max-width:100%;aspect-ratio:1/1;border:1px solid var(--line);border-radius:10px;
+  background:radial-gradient(circle at 50% 45%,#16202C 0%,var(--bg) 70%);cursor:grab;touch-action:none}
+.stage canvas:active{cursor:grabbing}
+.stage .cap{margin-top:10px;display:flex;justify-content:space-between;gap:12px;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+#err{color:var(--accent)}
+
+/* sections */
+section{padding-block:56px;border-top:1px solid var(--line)}
+.sec-head{display:flex;flex-direction:column;gap:8px;margin-bottom:32px}
+.sec-head h2{font-size:clamp(26px,3.4vw,34px);font-weight:600}
+.sec-head p{color:var(--muted);max-width:62ch}
+
+.about{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:40px}
+.about p+p{margin-top:14px}
+.about .body{color:#C5CDD8;max-width:62ch}
+.facts{display:grid;gap:0;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.facts div{display:flex;justify-content:space-between;gap:16px;padding:12px 16px;border-top:1px solid var(--line)}
+.facts div:first-child{border-top:0}
+.facts dt{font-family:var(--f-mono);font-size:12.5px;color:var(--muted)}
+.facts dd{margin:0;text-align:right;font-size:14.5px}
+
+/* work */
+.track{font-family:var(--f-mono);font-size:13px;color:var(--muted);margin:8px 0 14px;display:flex;align-items:center;gap:10px}
+.track::after{content:"";flex:1;height:1px;background:var(--line)}
+.work{display:grid;gap:16px;margin-bottom:40px}
+.case{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:28px;padding:24px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.case.feature{border-color:rgba(240,168,74,.35)}
+.case h3{font-size:22px;font-weight:600}
+.case .kind{margin-top:6px;color:var(--muted);font-size:14.5px}
+.status{display:inline-block;margin-top:14px;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.05em;padding:3px 8px;border-radius:4px}
+.s-dev{color:var(--accent);background:var(--accent-soft)}
+.s-rd{color:var(--cool);background:var(--cool-soft)}
+.s-done{color:var(--good);background:rgba(127,203,152,.12)}
+.case ul{margin:0;padding-left:18px;color:#C5CDD8;font-size:15px;display:grid;gap:6px}
+.case li::marker{color:var(--accent)}
+.ai .case li::marker{color:var(--cool)}
+.tags{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:2px 7px}
+.pipe{margin-top:14px;font-family:var(--f-mono);font-size:12.5px;color:var(--cool);overflow-x:auto;white-space:nowrap;padding:8px 10px;background:var(--surface-2);border-radius:6px}
+.pipe span{color:var(--muted)}
+
+.lab{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.lab div{padding:16px;border:1px solid var(--line);border-radius:8px}
+.lab h4{margin:0;font-family:var(--f-display);font-size:16px;font-weight:600}
+.lab p{margin-top:6px;color:var(--muted);font-size:14px}
+.lab.ship{margin-bottom:40px}
+.store{display:inline-block;margin-top:10px;font-family:var(--f-mono);font-size:12.5px}
+
+/* experience */
+.timeline{display:grid;gap:0}
+.role{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;padding-block:20px;border-top:1px solid var(--line)}
+.role:first-child{border-top:0;padding-top:0}
+.role .when{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.role h3{font-size:19px;font-weight:600}
+.role h3 span{color:var(--muted);font-weight:500}
+.role p{margin-top:6px;color:#C5CDD8;font-size:15px;max-width:64ch}
+
+/* skills */
+.skills{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.skills div{padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.skills h4{margin:0 0 10px;font-family:var(--f-mono);font-size:12.5px;font-weight:500;color:var(--accent);letter-spacing:.05em}
+.skills p{color:#C5CDD8;font-size:14.5px;line-height:1.75}
+
+/* contact */
+.contact{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;align-items:start}
+.contact h2{font-size:clamp(28px,4vw,40px)}
+.contact .body{margin-top:14px;color:#C5CDD8;max-width:48ch}
+.links{display:grid;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.links div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+.links div:first-child{border-top:0}
+.links dt{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);min-width:80px}
+.links dd{margin:0;flex:1;min-width:0;overflow-wrap:anywhere;user-select:all}
+.copy{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:hover{color:var(--fg)}
+footer{padding-block:28px 40px;border-top:1px solid var(--line);font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+
+@media (max-width:860px){
+  .hero,.about,.contact{grid-template-columns:1fr}
+  .stage{justify-self:start}
+  .case{grid-template-columns:1fr;gap:16px}
+  .skills{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lab{grid-template-columns:1fr}
+  .role{grid-template-columns:1fr;gap:6px}
+}
+@media (max-width:480px){.skills{grid-template-columns:1fr}.hero{padding-block:40px}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<nav>
+  <div class="brand">vijay<span>.</span>dev</div>
+  <ul>
+    <li><a href="#work">work</a></li>
+    <li><a href="#experience">experience</a></li>
+    <li><a href="#skills">skills</a></li>
+    <li><a href="#contact">contact</a></li>
+  </ul>
+</nav>
+
+<header class="hero">
+  <div>
+    <div class="label"><b>&gt;</b> senior developer · ai + games · 10+ years</div>
+    <h1 style="margin-top:14px">I build games, and the <em>AI systems</em> that make them.</h1>
+    <p class="lede">Unity and AR/VR developer with shipped titles and team-lead experience, now building GenAI pipelines: local image models that generate game assets, agentic systems, and FastAPI backends that run them.</p>
+    <div class="meta">
+      <span class="chip on">● open to roles</span>
+      <span class="chip">Unity · C#</span>
+      <span class="chip">Python · FastAPI</span>
+      <span class="chip">LangChain · ComfyUI</span>
+      <span class="chip">Spring Boot</span>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href="#work">See the work</a>
+      <a class="btn" href="#contact">Get in touch</a>
+    </div>
+  </div>
+  <figure class="stage" style="margin:0">
+    <canvas id="poly" width="840" height="840" aria-label="Interactive PolySphere puzzle: scattered 3D polygons that form a sphere from one viewing angle. Drag to rotate."></canvas>
+    <figcaption class="cap"><span>PolySphere ray-scatter · drag to rotate</span><span id="err">0.0°</span></figcaption>
+  </figure>
+</header>
+
+<section id="about">
+  <div class="about">
+    <div>
+      <div class="sec-head"><span class="label"><b>//</b> about</span><h2>Game developer first. AI engineer by choice.</h2></div>
+      <div class="body">
+        <p>I've spent more than ten years building interactive software: simulation and multiplayer games on Google Play, math and reading e-learning games for HMH played on web and mobile, AR/VR/MR apps, and today Aura Reality, a 3D facial imaging and skin-analysis system at Hexagon, where I'm the lead.</p>
+        <p>Outside work I build AI systems for games and media: asset generation with local diffusion models, an AI interior designer, a film-production pipeline, and agentic RAG tools. I like problems where geometry, rendering and machine learning meet.</p>
+      </div>
+    </div>
+    <dl class="facts">
+      <div><dt>building since</dt><dd>2014 · 10+ years</dd></div>
+      <div><dt>recent</dt><dd>Team Lead, Hexagon</dd></div>
+      <div><dt>focus</dt><dd>AI for games, agentic systems</dd></div>
+      <div><dt>engines</dt><dd>Unity, Panda3D, Phaser.js</dd></div>
+      <div><dt>education</dt><dd>M.Tech VLSI Design, JNTUH</dd></div>
+      <div><dt>based in</dt><dd>Hyderabad, India</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section id="work">
+  <div class="sec-head"><span class="label"><b>//</b> selected work</span><h2>Recent projects</h2><p>Personal and freelance builds from the last year. Status is marked on each so you know what's finished and what's in progress.</p></div>
+
+  <div class="track">games</div>
+  <div class="work">
+    <article class="case feature">
+      <div>
+        <h3>PolySphere</h3>
+        <p class="kind">Unity 6 mobile perspective puzzle</p>
+        <span class="status s-dev">IN DEVELOPMENT</span>
+        <div class="tags"><span class="tag">Unity 6</span><span class="tag">C#</span><span class="tag">Editor tooling</span><span class="tag">Geometry</span><span class="tag">iOS/Android</span></div>
+      </div>
+      <ul>
+        <li>Artwork scatters into 3D fragments; one drag rotates the whole cluster, and only one viewpoint reassembles the picture. The animation at the top of this page uses the same method.</li>
+        <li>Wrote an Editor generator that cuts any image along its own facet lines into exact-count polygon pieces (421 pieces from one illustration), with UVs into the original art.</li>
+        <li>Scatter slides each piece along its camera ray, so the solved view stays pixel-exact under a perspective camera.</li>
+        <li>Tuned difficulty by measurement: swept every rotation axis, found and closed two "free solution" giveaways (roll symmetry and a silhouette cue), and auto-fit the camera so no piece leaves the screen on any phone aspect ratio.</li>
+        <li>Verified C# outside Unity with a mono test harness that renders the generator's real output.</li>
+      </ul>
+    </article>
+
+    <article class="case">
+      <div>
+        <h3>Color Sand</h3>
+        <p class="kind">Unity hyper-casual prototype, 2-day build</p>
+        <span class="status s-done">COMPLETE</span>
+        <div class="tags"><span class="tag">Unity 6</span><span class="tag">Android</span><span class="tag">Game feel</span></div>
+      </div>
+      <ul>
+        <li>Sand-pouring puzzle built to a 2-day brief, delivered as Android APK, video, project and README.</li>
+        <li>Extended the single-container brief to four colored boxes: tap to slide a box under the spout; sand pours only on a color match, with gate-shake and flash feedback on a mismatch.</li>
+      </ul>
+    </article>
+
+    <article class="case">
+      <div>
+        <h3>Crosstile</h3>
+        <p class="kind">Crossword-style word-grid game</p>
+        <span class="status s-dev">WEB PROTOTYPE</span>
+        <div class="tags"><span class="tag">JavaScript</span><span class="tag">Puzzle design</span><span class="tag">Unity port planned</span></div>
+      </div>
+      <ul>
+        <li>Players place letters from a 5-letter tray into a crossing grid, with picture or partial-word clues on rows and columns, up to 7×7.</li>
+        <li>Tray size chosen with future multiplayer in mind; validating on web before a Unity port.</li>
+      </ul>
+    </article>
+  </div>
+
+  <div class="track">shipped &amp; client work</div>
+  <div class="lab ship">
+    <div><h4>HMH M180 &amp; M360</h4><p>Math e-learning for HMH: 10 mini-games with 100 levels each, on WebGL, iOS and Android. Led front-end and deployment in a team of 6; built 11 of the games. Cognizant.</p></div>
+    <div><h4>HMH iREAD</h4><p>Reading e-learning: 20 mini-games with 50 levels each. Key front-end developer in a team of 10, Jenkins CI and S3 asset bundles. Cognizant.</p></div>
+    <div><h4>Aura Reality</h4><p>3D facial imaging system for aesthetic clinics: a 13-camera capture builds a digital twin of the patient's face for skin analysis, measurements and treatment simulation. I lead the 3D visualisation application (Unity, C#, Flutter), including AI that detects wrinkles, pores and skin type. Hexagon.</p><a class="store" href="https://aurareality.com/">aurareality.com ↗</a></div>
+    <div><h4>Bottle Shooter Expert 3D</h4><p>Physics shooting game, built as the solo developer. Still live with 49K+ reviews. iGames.</p><a class="store" href="https://play.google.com/store/apps/details?id=com.igames.bottleshooterexpert">Google Play ↗</a></div>
+    <div><h4>Words to Emojis</h4><p>Real-time multiplayer emoji quiz built with Photon (PUN) in a team of 5. Z Infinity Games.</p></div>
+    <div><h4>Train &amp; boat simulators</h4><p>Oil Tanker Train Simulator, Indian Train Driving 2018 and Boat Simulator: physics-based driving sims for Android and iOS. iGames.</p></div>
+    <div><h4>Virtual Walkthrough</h4><p>WebGL virtual office generated from admin-panel data, with S3 asset bundles and an Azure POC. Cognizant.</p></div>
+    <div><h4>UIM AR Logo</h4><p>Image-target AR app placing a client's 3D logo, built with MAXST for iOS and Android.</p></div>
+    <div><h4>Slot game reskins</h4><p>Reworked a real slot-machine game into three new concepts: symbols, combinations, power-ups and animations.</p></div>
+  </div>
+
+  <div class="track">ai systems</div>
+  <div class="work ai">
+    <article class="case feature">
+      <div>
+        <h3>Smart NPC Opponent</h3>
+        <p class="kind">Reinforcement-learning game AI in Panda3D</p>
+        <span class="status s-done">COMPLETE</span>
+        <div class="tags"><span class="tag">Panda3D</span><span class="tag">PyTorch</span><span class="tag">Stable Baselines3</span><span class="tag">OpenAI Gym</span><span class="tag">LangGraph</span><span class="tag">ONNX</span></div>
+      </div>
+      <div>
+        <ul>
+          <li>3D fighting simulation where the enemy learns to attack, dodge and adapt to the player's patterns, trained with PPO.</li>
+          <li>Custom Gym environment with a shaped reward: +10 hit, +5 dodge, −10 hit taken, −5 cornered.</li>
+          <li>After 500,000 training steps the NPC's win rate rose from 12% to 78%.</li>
+          <li>LangGraph drives the NPC state machine (patrol, chase, attack, retreat) and LangChain writes context-aware dialogue. The trained model exports to .onnx for use in other engines.</li>
+        </ul>
+        <div class="pipe">Panda3D scene <span>→</span> Gym rewards <span>→</span> PPO training <span>→</span> LangGraph states <span>→</span> .onnx export</div>
+      </div>
+    </article>
+
+    <article class="case">
+      <div>
+        <h3>Game Asset Pipeline</h3>
+        <p class="kind">Automated 2D game-asset generation</p>
+        <span class="status s-dev">IN DEVELOPMENT</span>
+        <div class="tags"><span class="tag">ComfyUI</span><span class="tag">Stable Diffusion</span><span class="tag">Python</span></div>
+      </div>
+      <div>
+        <ul>
+          <li>Turns a short game brief into generated, cleaned and packed assets ready for any engine, using a locally hosted image model.</li>
+          <li>Engine-agnostic output by design, and 2D-first because diffusion models produce 2D assets reliably.</li>
+        </ul>
+        <div class="pipe">brief <span>→</span> prompt plan <span>→</span> ComfyUI <span>→</span> cleanup <span>→</span> sprite sheets / atlases</div>
+      </div>
+    </article>
+
+    <article class="case">
+      <div>
+        <h3>AI Film Pipeline</h3>
+        <p class="kind">Production platform for an AI animated series</p>
+        <span class="status s-rd">R&amp;D</span>
+        <div class="tags"><span class="tag">FastAPI</span><span class="tag">SQLAlchemy</span><span class="tag">ComfyUI</span><span class="tag">Wan 2.1</span><span class="tag">AnimateDiff</span></div>
+      </div>
+      <ul>
+        <li>The app is the source of truth for a long-running series: series bible, shot graph, versioning and dependency tracking, so changing one asset regenerates only the shots that use it.</li>
+        <li>Benchmarked open video models on consumer hardware (Apple Silicon and a 6 GB CUDA GPU) and split heavy stages onto free cloud GPUs.</li>
+      </ul>
+    </article>
+
+    <article class="case">
+      <div>
+        <h3>AI Interior Designer</h3>
+        <p class="kind">Room photo to buildable furniture</p>
+        <span class="status s-dev">IN DEVELOPMENT</span>
+        <div class="tags"><span class="tag">Unity</span><span class="tag">FastAPI</span><span class="tag">Parametric design</span><span class="tag">Mobile</span></div>
+      </div>
+      <ul>
+        <li>Mobile-first platform for the Indian residential market: from a photo of a room to parametric furniture that can actually be built.</li>
+        <li>Built as a vertical slice, starting with a parametric wardrobe.</li>
+      </ul>
+    </article>
+
+    <article class="case">
+      <div>
+        <h3>Market Signal System</h3>
+        <p class="kind">Rule-based Nifty/BankNifty signal engine</p>
+        <span class="status s-done">V2 RUNNING</span>
+        <div class="tags"><span class="tag">Python</span><span class="tag">Zerodha Kite API</span><span class="tag">Telegram</span><span class="tag">React</span></div>
+      </div>
+      <ul>
+        <li>Three-filter confluence strategy (Gift Nifty, put-call ratio, opening-range retest) with retest entry timing, VIX-based day-quality filtering and market-breadth checks.</li>
+        <li>Pushes alerts to Telegram; paired with a React trade journal I built for review.</li>
+      </ul>
+    </article>
+  </div>
+
+  <div class="track">in the lab</div>
+  <div class="lab">
+    <div><h4>RAG Document Q&amp;A</h4><p>LangChain retrieval over documents, with tuned chunking and token budgets. Deploy target: FastAPI + React + vector DB.</p></div>
+    <div><h4>Multi-agent research &amp; SQL agents</h4><p>LangGraph agents for research synthesis and natural-language database queries.</p></div>
+    <div><h4>Mukti</h4><p>Party word-guessing game with animal voice-distortion profiles; FastAPI backend, Unity Netcode concept.</p></div>
+  </div>
+</section>
+
+<section id="experience">
+  <div class="sec-head"><span class="label"><b>//</b> experience</span><h2>Where I've worked</h2></div>
+  <div class="timeline">
+    <div class="role"><div class="when">Aug 2023 – present</div><div><h3>Hexagon <span>· Team Lead</span></h3><p>Lead on <a href="https://aurareality.com/">Aura Reality</a>, a 3D facial imaging system for aesthetic clinics. It captures a photo-realistic digital twin of a patient's face, and my team builds the 3D visualisation application practitioners use for skin analysis, facial measurements, before-and-after comparison and treatment simulation. Unity, C# and Flutter on tablet and desktop. We added AI models that detect wrinkles, pores and skin type, and I'm working on an AI-assisted integration with Apple HealthKit.</p></div></div>
+    <div class="role"><div class="when">Aug 2021 – <span class="todo">ADD: end</span></div><div><h3>Tata Elxsi <span>· Specialist</span></h3><p>Worked on an AR/VR project for Mercedes-Benz, developing augmented and virtual reality experiences in Unity and C#. For Comcast, led the team that built a Unity 3D application visualising their cable network, with junctions, hubs and cables, so engineers can trace an outage to its root cause. Proposed an AR version of the tool and started building it. Also built AR, VR and mobile applications for Android and iOS.</p></div></div>
+    <div class="role"><div class="when">Aug 2021 – Jul 2023</div><div><h3>Capgemini <span>· Senior Associate</span></h3><p>AR/VR applications, mobile games and e-learning apps in a fast-paced multi-project team.</p></div></div>
+    <div class="role"><div class="when">Sep 2018 – Aug 2021</div><div><h3>Cognizant <span>· Associate, Projects</span></h3><p>Led front-end development on HMH's M180 and M360 math games and built iREAD and an internal WebGL Virtual Walkthrough. Unity, WebGL, Jenkins, AWS S3.</p></div></div>
+    <div class="role"><div class="when">Aug 2017 – Aug 2018</div><div><h3>Z Infinity Games <span>· Programmer</span></h3><p>Multiplayer and mobile games including Words to Emojis (Photon PUN), plus AR client work.</p></div></div>
+    <div class="role"><div class="when">Sep 2015 – Jul 2017</div><div><h3>iGames Entertainment <span>· Programmer</span></h3><p>Simulation and physics games for Android and iOS, including Bottle Shooter Expert 3D as solo developer.</p></div></div>
+    <div class="role"><div class="when">Sep 2014 – Sep 2015</div><div><h3>For U Tech <span>· Programmer</span></h3><p>Unity games for Android.</p></div></div>
+  </div>
+</section>
+
+<section id="skills">
+  <div class="sec-head"><span class="label"><b>//</b> toolkit</span><h2>Skills</h2></div>
+  <div class="skills">
+    <div><h4>GAME DEV</h4><p>Unity (C#), WebGL, iOS/Android, AR/VR/MR (MAXST), Photon PUN, shaders, Panda3D, Phaser.js, Unreal</p></div>
+    <div><h4>AI / ML</h4><p>PyTorch, Stable Baselines3 (PPO), OpenAI Gym, LangChain, LangGraph, RAG, ComfyUI, diffusion and video models</p></div>
+    <div><h4>BACKEND</h4><p>Python, FastAPI, Pydantic, SQLAlchemy/SQLModel, Java, Spring Boot, C/C++</p></div>
+    <div><h4>APPS &amp; DELIVERY</h4><p>Flutter, React, Jenkins, AWS S3, Azure, Git/SVN, design patterns (DI, SOLID)</p></div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="contact">
+    <div>
+      <span class="label"><b>//</b> contact</span>
+      <h2 style="margin-top:10px">Let's talk about the role.</h2>
+      <p class="body">Interested in Unity, AI-for-games and GenAI engineering roles. I'm happy to walk through any project above in a call.</p>
+    </div>
+    <dl class="links">
+      <div><dt>email</dt><dd id="c-email">vijaypandu6@gmail.com</dd><button class="copy" data-copy="c-email" type="button">copy</button></div>
+      <div><dt>phone</dt><dd id="c-phone">+91 90322 62325</dd><button class="copy" data-copy="c-phone" type="button">copy</button></div>
+      <div><dt>linkedin</dt><dd><a href="https://www.linkedin.com/in/vijay-saliganti-112bba72/">linkedin.com/in/vijay-saliganti-112bba72</a></dd></div>
+      <div><dt>github</dt><dd><span class="todo">ADD: GitHub URL</span></dd></div>
+      <div><dt>résumé</dt><dd><span class="todo">ADD: résumé link</span></dd></div>
+    </dl>
+  </div>
+</section>
+
+<footer>© 2026 Vijay · built by hand, no template</footer>
+</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const el=document.getElementById(b.dataset.copy); const txt=el.textContent.trim();
+    const done=()=>{b.textContent='copied';setTimeout(()=>b.textContent='copy',1400)};
+    const fallback=()=>{const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='selected';setTimeout(()=>b.textContent='copy',1400)};
+    try{navigator.clipboard.writeText(txt).then(done,fallback)}catch(e){fallback()}
+  });
+});
+
+/* PolySphere ray-scatter: triangles of a sphere disc, each slid along its ray from the camera.
+   At rotation 0 every piece projects exactly back into place. */
+(function(){
+  const cv=document.getElementById('poly'), ctx=cv.getContext('2d'), errEl=document.getElementById('err');
+  const D=7, F=7*0.36; // camera distance, focal (screen units)
+  const pieces=[]; const R=1; const N=9; const h=2*R/N;
+  let seed=7; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+  for(let j=-N;j<=N;j++){for(let i=-N;i<=N;i++){
+    const x0=i*h+(j%2?h/2:0), y0=j*h*0.866;
+    const tris=[[[x0,y0],[x0+h,y0],[x0+h/2,y0+h*0.866]],[[x0+h,y0],[x0+h*1.5,y0+h*0.866],[x0+h/2,y0+h*0.866]]];
+    for(const t of tris){
+      const cx=(t[0][0]+t[1][0]+t[2][0])/3, cy=(t[0][1]+t[1][1]+t[2][1])/3;
+      if(cx*cx+cy*cy>R*R*0.93) continue;
+      // sphere shading: light from upper-left
+      const nz=Math.sqrt(Math.max(0,1-cx*cx-cy*cy)); const lit=Math.max(0,(-cx*0.45+cy*0.55+nz*0.7));
+      const s=(rnd()<.5?1:-1)*(0.08+rnd()*0.32); const k=1+s; // ray scale
+      const v=t.map(p=>{const x=p[0],y=p[1],z=0; return [k*x,k*y,D+k*(z-D)]});
+      pieces.push({v,lit,jit:rnd()*0.12});
+    }
+  }}
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let yaw=0.9,pitch=0.5,drag=null,last=performance.now(),phase=0,auto=!reduce;
+  if(reduce){yaw=0;pitch=0}
+  function rot(p){ // rotate about origin
+    let [x,y,z]=p; const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+    let x1=cy*x+sy*z, z1=-sy*x+cy*z; let y2=cp*y-sp*z1, z2=sp*y+cp*z1; return [x1,y2,z2];
+  }
+  function draw(){
+    const W=cv.width,H=cv.height, S=0.4*W*D/(R*F);
+    ctx.clearRect(0,0,W,H);
+    const off=Math.hypot(yaw,pitch); const solved=off<0.05;
+    const list=pieces.map(p=>{const q=p.v.map(rot);const z=(q[0][2]+q[1][2]+q[2][2])/3;return{q,z,p}}).sort((a,b)=>a.z-b.z);
+    for(const it of list){
+      ctx.beginPath();
+      it.q.forEach((q,i)=>{const d=D-q[2];const X=W/2+q[0]*F/d*S,Y=H/2-q[1]*F/d*S; i?ctx.lineTo(X,Y):ctx.moveTo(X,Y)});
+      ctx.closePath();
+      const L=it.p.lit+it.p.jit;
+      const r=Math.round(60+L*180), g=Math.round(55+L*120), b=Math.round(48+L*30);
+      ctx.fillStyle=`rgb(${Math.min(r,245)},${Math.min(g,176)},${Math.min(b,90)})`; ctx.fill();
+      ctx.strokeStyle='rgba(12,16,21,.55)'; ctx.lineWidth=1; ctx.stroke();
+    }
+    if(solved){ctx.strokeStyle='rgba(240,168,74,.6)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(W/2,H/2,W*0.405,0,Math.PI*2);ctx.stroke()}
+    errEl.textContent=(solved?'solved · ':'')+(off*180/Math.PI).toFixed(1)+'°';
+  }
+  function tick(now){
+    const dt=Math.min(.05,(now-last)/1000); last=now;
+    if(auto&&!drag){
+      phase=(phase+dt)%10;
+      if(phase<6.5){const t=now/1000;yaw=0.95*Math.sin(t*0.45);pitch=0.55*Math.cos(t*0.33);}
+      else if(phase<8){yaw*=Math.pow(0.02,dt);pitch*=Math.pow(0.02,dt);}
+      else{yaw*=0.6;pitch*=0.6;}
+    }
+    draw(); if(!reduce||drag) requestAnimationFrame(tick);
+  }
+  cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};auto=false;cv.setPointerCapture(e.pointerId);if(reduce)requestAnimationFrame(tick)});
+  cv.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-drag.x)*0.008;pitch+=(e.clientY-drag.y)*0.008;drag={x:e.clientX,y:e.clientY};if(reduce)draw()});
+  const up=()=>{drag=null;if(Math.hypot(yaw,pitch)<0.12){yaw=0;pitch=0;draw()}};
+  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  draw(); if(!reduce) requestAnimationFrame(tick);
+})();
+</script>
+
+</body>
+</html>
